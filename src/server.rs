@@ -2,7 +2,10 @@ use arc_swap::ArcSwap;
 use sqlx::MySql;
 use tonic::{Request, Response, Status, transport::Server};
 use user_svc::{
-    db::{self, DbUserRepository, repository::UserRepository},
+    db::{
+        self, DbUserRepository,
+        repository::{User as UserModel, UserRepository},
+    },
     pb::user::{
         CreateUserRequest, CreateUserResponse, DeleteUserRequest, DeleteUserResponse,
         GetUserProfileRequest, GetUserProfileResponse,
@@ -53,10 +56,26 @@ where
 impl<R: UserRepository + 'static> User for UserService<R> {
     async fn create_user(
         &self,
-        _request: Request<CreateUserRequest>,
+        req: Request<CreateUserRequest>,
     ) -> Result<Response<CreateUserResponse>, Status> {
+        let req_refed = req.get_ref();
+
+        let new_id = self.repo
+            .create_user(UserModel {
+                id: None,
+                username: req_refed.username.clone(),
+                gender: req_refed.gender.clone(),
+                avatar_url: req_refed.avatar_url.clone(),
+                cellphone_number: req_refed.cellphone_number.clone(),
+                email: req_refed.email.clone(),
+                password: req_refed.password.clone(),
+            })
+            .await
+            .map_err(|err| Status::internal(err.to_string()))?
+            ;
+
         Ok(Response::new(CreateUserResponse {
-            uid: "1".to_string(),
+            uid: new_id, 
         }))
     }
 
