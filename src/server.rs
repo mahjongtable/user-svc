@@ -1,30 +1,56 @@
+use arc_swap::ArcSwap;
+use sqlx::MySql;
 use tonic::{Request, Response, Status, transport::Server};
-use user_svc::pb::user::{
-    CreateUserRequest, CreateUserResponse, DeleteUserRequest, DeleteUserResponse,
-    GetUserProfileRequest, GetUserProfileResponse,
-    user_server::{User, UserServer},
+use user_svc::{
+    db::{self, DbUserRepository, repository::UserRepository},
+    pb::user::{
+        CreateUserRequest, CreateUserResponse, DeleteUserRequest, DeleteUserResponse,
+        GetUserProfileRequest, GetUserProfileResponse,
+        user_server::{User, UserServer},
+    },
+    settings::{AppSettings, init_config},
 };
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let app_settings = init_config("settings.toml")?;
+
+    println!("The database is connecting...");
+    let pool = db::connect::<MySql>(&app_settings.load().database).await?;
+    println!("The database has connected successfully");
+
+    let db_user_repo = DbUserRepository { pool };
+
     Server::builder()
-        .add_service(UserServer::new(UserService::new()))
+        .add_service(UserServer::new(UserService::new(
+            app_settings,
+            db_user_repo,
+        )))
         .serve("[::1]:50051".parse()?)
         .await?;
 
     Ok(())
 }
 
-struct UserService;
+struct UserService<R>
+where
+    R: UserRepository,
+{
+    app_settings: ArcSwap<AppSettings>,
+    repo: R,
+}
 
-impl UserService {
-    fn new() -> Self {
-        Self
+impl<R> UserService<R>
+where
+    R: UserRepository,
+{
+    fn new(app_settings: ArcSwap<AppSettings>, repo: R) -> Self {
+        Self { app_settings, repo }
     }
 }
 
 #[tonic::async_trait]
-impl User for UserService {
+impl<R: UserRepository + 'static> User for UserService<R> {
     async fn create_user(
         &self,
         _request: Request<CreateUserRequest>,
