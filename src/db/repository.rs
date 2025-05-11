@@ -14,14 +14,14 @@ use sqlx::{Error, types::chrono};
 pub struct User {
     pub id: Option<u64>,
     pub username: Option<String>,
-    pub gender: Option<i32>,
+    pub gender: Option<i8>,
     pub avatar_url: Option<String>,
     pub email: String,
     pub cellphone_number: Option<String>,
     pub password: Option<String>,
-    pub created_at: Option<chrono::DateTime<chrono::Utc>>,
-    pub updated_at: Option<chrono::DateTime<chrono::Utc>>,
-    pub deleted_at: Option<chrono::DateTime<chrono::Utc>>,
+    pub created_at: Option<chrono::NaiveDateTime>,
+    pub updated_at: Option<chrono::NaiveDateTime>,
+    pub deleted_at: Option<chrono::NaiveDateTime>,
 }
 
 #[async_trait]
