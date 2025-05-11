@@ -69,13 +69,16 @@ impl<R: UserRepository + 'static> User for UserService<R> {
                 cellphone_number: req_refed.cellphone_number.clone(),
                 email: req_refed.email.clone(),
                 password: req_refed.password.clone(),
+                created_at: None,
+                updated_at: None,
+                deleted_at: None,
             })
             .await
             .map_err(|err| Status::internal(err.to_string()))?
             ;
 
         Ok(Response::new(CreateUserResponse {
-            uid: new_id, 
+            uid: new_id as i64, 
         }))
     }
 
