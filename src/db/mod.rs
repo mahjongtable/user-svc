@@ -1,9 +1,11 @@
 pub mod repository;
 
+use std::time;
+
 use crate::settings;
-use repository::{User, UserRepository};
-use sqlx::{pool::PoolOptions, Database, Error, MySql, Pool};
 use async_trait::async_trait;
+use repository::{User, UserRepository};
+use sqlx::{Database, Error, Executor, MySql, Pool, pool::PoolOptions};
 
 pub async fn connect<D: Database>(cfg: &settings::Database) -> Result<Pool<D>, Error> {
     let url = format!(
@@ -29,12 +31,12 @@ pub struct DbUserRepository {
 
 #[async_trait]
 impl UserRepository for DbUserRepository {
-    async fn get_user(&self, uid: i64) -> Result<User, Error> {
+    async fn get_user(&self, uid: u64) -> Result<User, Error> {
         let _sql = "SELECT `username`, `gender`, `avatar_url`, `email`, `cellphone_number`, `password` WHERE `id` = $1";
         todo!()
     }
 
-    async fn create_user(&self, user: User) -> Result<i64, Error> {
+    async fn create_user(&self, user: User) -> Result<u64, Error> {
         let username = user.username.unwrap_or("User".to_string());
         let gender = user.gender;
         let avatar_url = user.gender;
@@ -42,14 +44,34 @@ impl UserRepository for DbUserRepository {
         let cellphone_number = user.cellphone_number;
         let password = user.password;
 
-        sqlx::query!(r#"
-            INSERT INTO `users` (`username`, `gender`, `avatar_url`, `email`, `cellphone_number`, `password`) VALUES (?, ?, ?, ?, ?, ?)
-        "#, username, gender, avatar_url, email, cellphone_number, password).execute(&self.pool).await?.last_insert_id();
+        let now_datetime = chrono::DateTime::<chrono::Utc>::from(chrono::Utc::now());
 
-        Ok(1)
+        let new_id = sqlx::query!(
+            r#"
+            INSERT INTO `users` (`username`, `gender`, `avatar_url`, `email`, `cellphone_number`, `password`, `created_at`, `updated_at`) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            "#,
+            username,
+            gender,
+            avatar_url,
+            email,
+            cellphone_number,
+            password,
+            now_datetime,
+            now_datetime
+        )
+        .execute(&self.pool)
+        .await?
+        .last_insert_id();
+
+        Ok(new_id)
     }
 
-    async fn delete_user(&self, uid: i64) -> Result<(), Error> {
-        todo!()
+    async fn delete_user(&self, uid: u64) -> Result<(), Error> {
+        let _r = sqlx::query("DELETE FROM `users` WHERE `id` = ?")
+            .bind(uid)
+            .execute(&self.pool)
+            .await?;
+
+        Ok(())
     }
 }
