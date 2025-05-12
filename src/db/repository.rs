@@ -1,6 +1,8 @@
 use async_trait::async_trait;
 use sqlx::{Error, types::chrono};
 
+use super::entity::UserEntity;
+
 // pub trait User: Send {
 //     fn uid(&self) -> Option<String>;
 //     fn username(&self) -> Option<String>;
@@ -11,22 +13,23 @@ use sqlx::{Error, types::chrono};
 //     fn password(&self) -> String;
 // }
 
-pub struct User {
-    pub id: Option<u64>,
-    pub username: Option<String>,
-    pub gender: Option<i8>,
-    pub avatar_url: Option<String>,
-    pub email: String,
-    pub cellphone_number: Option<String>,
-    pub password: Option<String>,
-    pub created_at: Option<chrono::NaiveDateTime>,
-    pub updated_at: Option<chrono::NaiveDateTime>,
-    pub deleted_at: Option<chrono::NaiveDateTime>,
-}
+// #[derive(Debug)]
+// pub struct User {
+//     pub id: Option<u64>,
+//     pub username: Option<String>,
+//     pub gender: Option<i8>,
+//     pub avatar_url: Option<String>,
+//     pub email: String,
+//     pub cellphone_number: Option<String>,
+//     pub password: Option<String>,
+//     pub created_at: Option<chrono::NaiveDateTime>,
+//     pub updated_at: Option<chrono::NaiveDateTime>,
+//     pub deleted_at: Option<chrono::NaiveDateTime>,
+// }
 
 #[async_trait]
 pub trait UserRepository: Send + Sync {
-    async fn get_user(&self, uid: u64) -> Result<User, Error>;
-    async fn create_user(&self, user: User) -> Result<u64, Error>;
+    async fn get_user(&self, uid: u64) -> Result<UserEntity, Error>;
+    async fn create_user(&self, user: UserEntity) -> Result<u64, Error>;
     async fn delete_user(&self, uid: u64) -> Result<(), Error>;
 }

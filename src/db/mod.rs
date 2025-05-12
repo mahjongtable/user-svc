@@ -1,11 +1,11 @@
 pub mod repository;
-
-use std::time;
+pub mod entity;
 
 use crate::settings;
 use async_trait::async_trait;
-use repository::{User, UserRepository};
-use sqlx::{Database, Error, Executor, MySql, Pool, pool::PoolOptions};
+use entity::UserEntity;
+use repository::UserRepository;
+use sqlx::{Database, Error, MySql, Pool, pool::PoolOptions};
 
 pub async fn connect<D: Database>(cfg: &settings::Database) -> Result<Pool<D>, Error> {
     let url = format!(
@@ -31,15 +31,15 @@ pub struct DbUserRepository {
 
 #[async_trait]
 impl UserRepository for DbUserRepository {
-    async fn get_user(&self, uid: u64) -> Result<User, Error> {
-        let _sql = "SELECT `username`, `gender`, `avatar_url`, `email`, `cellphone_number`, `password` WHERE `id` = $1";
-        todo!()
+    async fn get_user(&self, uid: u64) -> Result<UserEntity, Error> {
+        let user = sqlx::query_as!(UserEntity, r#"SELECT `id`, `username`, `gender`, `avatar_url`, `email`, `cellphone_number`, `password`, `created_at`, `updated_at`, `deleted_at` FROM `users` WHERE `id` = ?"#, uid).fetch_one(&self.pool).await?;
+        Ok(user)
     }
 
-    async fn create_user(&self, user: User) -> Result<u64, Error> {
-        let username = user.username.unwrap_or("User".to_string());
+    async fn create_user(&self, user: UserEntity) -> Result<u64, Error> {
+        let username = user.username;
         let gender = user.gender;
-        let avatar_url = user.gender;
+        let avatar_url = user.avatar_url;
         let email = user.email;
         let cellphone_number = user.cellphone_number;
         let password = user.password;

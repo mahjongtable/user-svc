@@ -2,13 +2,10 @@ use arc_swap::ArcSwap;
 use sqlx::MySql;
 use tonic::{Request, Response, Status, transport::Server};
 use user_svc::{
-    db::{
-        self, DbUserRepository,
-        repository::{User as UserModel, UserRepository},
-    },
+    db::{self, DbUserRepository, entity::UserEntity, repository::UserRepository},
     pb::user::{
         CreateUserRequest, CreateUserResponse, DeleteUserRequest, DeleteUserResponse,
-        GetUserProfileRequest, GetUserProfileResponse,
+        GetUserProfileRequest, GetUserProfileResponse, GetUserRequest, GetUserResponse,
         user_server::{User, UserServer},
     },
     settings::{AppSettings, init_config},
@@ -58,28 +55,13 @@ impl<R: UserRepository + 'static> User for UserService<R> {
         &self,
         req: Request<CreateUserRequest>,
     ) -> Result<Response<CreateUserResponse>, Status> {
-        let req_refed = req.get_ref();
-
-        let new_id = self.repo
-            .create_user(UserModel {
-                id: None,
-                username: req_refed.username.clone(),
-                gender: req_refed.gender.clone(),
-                avatar_url: req_refed.avatar_url.clone(),
-                cellphone_number: req_refed.cellphone_number.clone(),
-                email: req_refed.email.clone(),
-                password: req_refed.password.clone(),
-                created_at: None,
-                updated_at: None,
-                deleted_at: None,
-            })
+        let new_id = self
+            .repo
+            .create_user(UserEntity::from(req.into_inner()))
             .await
-            .map_err(|err| Status::internal(err.to_string()))?
-            ;
+            .map_err(|err| Status::internal(err.to_string()))?;
 
-        Ok(Response::new(CreateUserResponse {
-            uid: new_id as i64, 
-        }))
+        Ok(Response::new(CreateUserResponse { uid: new_id as i64 }))
     }
 
     async fn delete_user(
@@ -91,14 +73,27 @@ impl<R: UserRepository + 'static> User for UserService<R> {
 
     async fn get_user_profile(
         &self,
-        _request: Request<GetUserProfileRequest>,
+        req: Request<GetUserProfileRequest>,
     ) -> Result<Response<GetUserProfileResponse>, Status> {
+        let user = self
+            .repo
+            .get_user(req.get_ref().uid as u64)
+            .await
+            .map_err(|err| Status::internal(err.to_string()))?;
+
+        println!("{:#?}", user);
+
         Ok(Response::new(GetUserProfileResponse {
-            username: "Lucas".to_owned(),
-            gender: 1,
-            avatar_url: Some(
-                "https://avatars.githubusercontent.com/u/53471930?v=4&size=64".to_owned(),
-            ),
+            username: user.username.unwrap_or_default(),
+            gender: user.gender.unwrap_or(1) as i32,
+            avatar_url: user.avatar_url,
         }))
+    }
+
+    async fn get_user(
+        &self,
+        req: Request<GetUserRequest>,
+    ) -> Result<Response<GetUserResponse>, Status> {
+        todo!()
     }
 }
