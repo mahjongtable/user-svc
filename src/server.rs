@@ -102,17 +102,6 @@ impl<R: UserRepository + 'static> User for UserService<R> {
             .await
             .map_err(|err| Status::internal(err.to_string()))?;
 
-        // Ok(Response::new(GetUserResponse {
-        //     id: user.id,
-        //     username: user.username,
-        //     gender: (),
-        //     avatar_url: (),
-        //     email: (),
-        //     cellphone_number: (),
-        //     created_at: (),
-        //     updated_at: (),
-        // }))
-
-        todo!()
+        Ok(Response::new(user.into()))
     }
 }

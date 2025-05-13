@@ -1,3 +1,4 @@
+use prost_types::Timestamp;
 
 // The fields are from the "entity.rs/UserEntity".
 #[deprecated]
@@ -17,4 +18,15 @@ pub struct CreateUserDto {
     // created_at..
     // updated_at..
     // deleted_at..
+}
+
+pub struct GetUserDto {
+    pub id: u64,
+    pub username: Option<String>,
+    pub gender: i8,
+    pub avatar_url: Option<String>,
+    pub email: String,
+    pub cellphone_number: Option<String>,
+    pub created_at: Option<Timestamp>,
+    pub updated_at: Option<Timestamp>,
 }

@@ -63,7 +63,7 @@ impl From<UserEntity> for GetUserResponse {
 
         Self {
             id: value.id,
-            username: value.username.unwrap_or_default(),
+            username: value.username,
             gender: value.gender.unwrap_or(0) as i32,
             avatar_url: value.avatar_url,
             email: value.email,
