@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use sqlx::{Error, types::chrono};
 
-use super::entity::UserEntity;
+use super::entity::{CreateUser, UserEntity};
 
 // pub trait User: Send {
 //     fn uid(&self) -> Option<String>;
@@ -30,6 +30,6 @@ use super::entity::UserEntity;
 #[async_trait]
 pub trait UserRepository: Send + Sync {
     async fn get_user(&self, uid: u64) -> Result<UserEntity, Error>;
-    async fn create_user(&self, user: UserEntity) -> Result<u64, Error>;
+    async fn create_user(&self, user: CreateUser) -> Result<u64, Error>;
     async fn delete_user(&self, uid: u64) -> Result<(), Error>;
 }

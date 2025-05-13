@@ -2,7 +2,7 @@ use arc_swap::ArcSwap;
 use sqlx::MySql;
 use tonic::{Request, Response, Status, transport::Server};
 use user_svc::{
-    db::{self, DbUserRepository, entity::UserEntity, repository::UserRepository},
+    db::{self, DbUserRepository, repository::UserRepository},
     pb::user::{
         CreateUserRequest, CreateUserResponse, DeleteUserRequest, DeleteUserResponse,
         GetUserProfileRequest, GetUserProfileResponse, GetUserRequest, GetUserResponse,
@@ -57,7 +57,7 @@ impl<R: UserRepository + 'static> User for UserService<R> {
     ) -> Result<Response<CreateUserResponse>, Status> {
         let new_id = self
             .repo
-            .create_user(UserEntity::from(req.into_inner()))
+            .create_user(req.into_inner().into())
             .await
             .map_err(|err| Status::internal(err.to_string()))?;
 
@@ -94,6 +94,25 @@ impl<R: UserRepository + 'static> User for UserService<R> {
         &self,
         req: Request<GetUserRequest>,
     ) -> Result<Response<GetUserResponse>, Status> {
+        let user_id = req.into_inner().uid;
+
+        let user = self
+            .repo
+            .get_user(user_id as u64)
+            .await
+            .map_err(|err| Status::internal(err.to_string()))?;
+
+        // Ok(Response::new(GetUserResponse {
+        //     id: user.id,
+        //     username: user.username,
+        //     gender: (),
+        //     avatar_url: (),
+        //     email: (),
+        //     cellphone_number: (),
+        //     created_at: (),
+        //     updated_at: (),
+        // }))
+
         todo!()
     }
 }

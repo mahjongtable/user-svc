@@ -1,9 +1,10 @@
 pub mod repository;
+pub mod dto;
 pub mod entity;
 
 use crate::settings;
 use async_trait::async_trait;
-use entity::UserEntity;
+use entity::{CreateUser, UserEntity};
 use repository::UserRepository;
 use sqlx::{Database, Error, MySql, Pool, pool::PoolOptions};
 
@@ -36,7 +37,7 @@ impl UserRepository for DbUserRepository {
         Ok(user)
     }
 
-    async fn create_user(&self, user: UserEntity) -> Result<u64, Error> {
+    async fn create_user(&self, user: CreateUser) -> Result<u64, Error> {
         let username = user.username;
         let gender = user.gender;
         let avatar_url = user.avatar_url;
@@ -44,11 +45,9 @@ impl UserRepository for DbUserRepository {
         let cellphone_number = user.cellphone_number;
         let password = user.password;
 
-        let now_datetime = chrono::DateTime::<chrono::Utc>::from(chrono::Utc::now());
-
         let new_id = sqlx::query!(
             r#"
-            INSERT INTO `users` (`username`, `gender`, `avatar_url`, `email`, `cellphone_number`, `password`, `created_at`, `updated_at`) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO `users` (`username`, `gender`, `avatar_url`, `email`, `cellphone_number`, `password`) VALUES (?, ?, ?, ?, ?, ?)
             "#,
             username,
             gender,
@@ -56,8 +55,6 @@ impl UserRepository for DbUserRepository {
             email,
             cellphone_number,
             password,
-            now_datetime,
-            now_datetime
         )
         .execute(&self.pool)
         .await?
