@@ -1,5 +1,5 @@
 use arc_swap::ArcSwap;
-use sqlx::MySql;
+use sqlx::{Error, MySql};
 use tonic::{Request, Response, Status, transport::Server};
 use user_svc::{
     db::{self, DbUserRepository, repository::UserRepository},
@@ -100,7 +100,10 @@ impl<R: UserRepository + 'static> User for UserService<R> {
             .repo
             .get_user(user_id as u64)
             .await
-            .map_err(|err| Status::internal(err.to_string()))?;
+            .map_err(|err| match err {
+                Error::RowNotFound => Status::not_found("The user doesn't exist or has been deleted."),
+                _ => Status::internal("An error occurred while accessing the database."),
+            })?;
 
         Ok(Response::new(user.into()))
     }
