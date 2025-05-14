@@ -2,10 +2,15 @@ use arc_swap::ArcSwap;
 use sqlx::{Error, MySql};
 use tonic::{Request, Response, Status, transport::Server};
 use user_svc::{
-    db::{self, DbUserRepository, repository::UserRepository},
+    db::{
+        self, DbUserRepository,
+        entity::{CreateUser, UpdateUser},
+        repository::UserRepository,
+    },
     pb::user::{
         CreateUserRequest, CreateUserResponse, DeleteUserRequest, DeleteUserResponse,
         GetUserProfileRequest, GetUserProfileResponse, GetUserRequest, GetUserResponse,
+        UpdateUserRequest, UpdateUserResponse,
         user_server::{User, UserServer},
     },
     settings::{AppSettings, init_config},
@@ -62,7 +67,7 @@ impl<R: UserRepository + 'static> User for UserService<R> {
             .await
             .map_err(|err| Status::internal(err.to_string()))?;
 
-        Ok(Response::new(CreateUserResponse { uid: new_id as i64 }))
+        Ok(Response::new(CreateUserResponse { uid: new_id }))
     }
 
     async fn delete_user(
@@ -102,10 +107,42 @@ impl<R: UserRepository + 'static> User for UserService<R> {
             .get_user(user_id as u64)
             .await
             .map_err(|err| match err {
-                Error::RowNotFound => Status::not_found("The user doesn't exist or has been deleted."),
+                Error::RowNotFound => {
+                    Status::not_found("The user doesn't exist or has been deleted.")
+                }
                 _ => Status::internal("An error occurred while accessing the database."),
             })?;
 
         Ok(Response::new(user.into()))
+    }
+
+    async fn update_user(
+        &self,
+        req: Request<UpdateUserRequest>,
+    ) -> Result<Response<UpdateUserResponse>, Status> {
+        let UpdateUserRequest {
+            uid,
+            username,
+            gender,
+            avatar_url,
+            email,
+            cellphone_number,
+        } = req.into_inner();
+
+        self.repo
+            .update_user(
+                uid,
+                UpdateUser {
+                    username,
+                    gender,
+                    avatar_url,
+                    email,
+                    cellphone_number,
+                },
+            )
+            .await
+            .map_err(|repo_err| Status::internal(repo_err.to_string()))?;
+
+        Ok(Response::new(UpdateUserResponse::default()))
     }
 }

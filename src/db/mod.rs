@@ -4,8 +4,8 @@ pub mod repository;
 
 use crate::settings;
 use async_trait::async_trait;
-use entity::{CreateUser, UserEntity};
-use repository::UserRepository;
+use entity::{CreateUser, UpdateUser, UserEntity};
+use repository::{RepositoryError, UserRepository};
 use sqlx::{Database, Error, MySql, Pool, pool::PoolOptions};
 
 pub async fn connect<D: Database>(cfg: &settings::Database) -> Result<Pool<D>, Error> {
@@ -70,6 +70,38 @@ impl UserRepository for DbUserRepository {
 
         // todo: Need to check whether the user already exist
         // and need to check whether the user has been deleted.
+
+        Ok(())
+    }
+
+    async fn update_user(&self, uid: u64, user: UpdateUser) -> Result<(), RepositoryError> {
+        let sql = "SELECT 1 FROM `users` WHERE `id` = ?";
+
+        if sqlx::query(sql).bind(uid).fetch_optional(&self.pool).await?.is_none() {
+            return Err(RepositoryError::RecordNotFound);
+        }
+
+        let sql = r#"
+        UPDATE IGNORE
+            `users`
+        SET
+            `username` = ?,
+            `gender` = ?,
+            `avatar_url` = ?,
+            `email` = ?,
+            `cellphone_number` = ?
+        WHERE `id` = ?
+        "#;
+
+        sqlx::query(sql)
+            .bind(user.username)
+            .bind(user.gender)
+            .bind(user.avatar_url)
+            .bind(user.email)
+            .bind(user.cellphone_number)
+            .bind(uid)
+            .execute(&self.pool)
+            .await?;
 
         Ok(())
     }
