@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use sqlx::{Error, types::chrono};
+use sqlx::Error;
 
 use super::entity::{CreateUser, UserEntity};
 
