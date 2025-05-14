@@ -74,6 +74,7 @@ impl From<UserEntity> for GetUserResponse {
     }
 }
 
+#[allow(unused)]
 fn hash_password(password: &str) -> String {
     todo!()
 }

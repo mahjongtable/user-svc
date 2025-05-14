@@ -36,6 +36,7 @@ struct UserService<R>
 where
     R: UserRepository,
 {
+    #[allow(unused)]
     app_settings: ArcSwap<AppSettings>,
     repo: R,
 }

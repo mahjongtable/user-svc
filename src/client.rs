@@ -1,4 +1,3 @@
-use tonic::client;
 use user_svc::pb::user::{user_client::UserClient, GetUserRequest};
 
 #[tokio::main]
