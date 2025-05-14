@@ -73,3 +73,7 @@ impl From<UserEntity> for GetUserResponse {
         }
     }
 }
+
+fn hash_password(password: &str) -> String {
+    todo!()
+}
