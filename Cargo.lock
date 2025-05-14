@@ -2311,6 +2311,7 @@ dependencies = [
  "prost-types",
  "serde",
  "sqlx",
+ "thiserror",
  "tokio",
  "tonic",
  "tonic-build",
