@@ -1,6 +1,6 @@
-pub mod repository;
 pub mod dto;
 pub mod entity;
+pub mod repository;
 
 use crate::settings;
 use async_trait::async_trait;
@@ -64,10 +64,12 @@ impl UserRepository for DbUserRepository {
     }
 
     async fn delete_user(&self, uid: u64) -> Result<(), Error> {
-        let _r = sqlx::query("DELETE FROM `users` WHERE `id` = ?")
-            .bind(uid)
-            .execute(&self.pool)
-            .await?;
+        let sql = "UPDATE `users` SET `deleted_at` = NOW() WHERE `id` = ? AND `deleted_at` IS NULL";
+
+        sqlx::query(sql).bind(uid).execute(&self.pool).await?;
+
+        // todo: Need to check whether the user already exist
+        // and need to check whether the user has been deleted.
 
         Ok(())
     }
